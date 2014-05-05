@@ -20,12 +20,35 @@ namespace BGE
         public GameObject boidPrefab;
         public GameObject leaderPrefab;
 		public GameObject mothershipPrefab;
-
+		public GameObject missilePrefab;
+		public GameObject alienJetTrailPrefab;
+		public GameObject jetTrailPrefab;
+		public GameObject missileTrailPrefab;
+		public GameObject mothershipLazerPrefab;
+		public GameObject closingCredits;
+		public GameObject openingCredits;
+		public AudioClip  explosionSoundPrefab;
+		public AudioClip rnfSoundPrefab;
+		public AudioClip mis1SoundPrefab;
+		public AudioClip fireAtWillSoundPrefab;
+		public AudioClip s3SoundPrefab;
+		public AudioClip s4SoundPrefab;
+		public AudioClip s5SoundPrefab;
+		public AudioClip s6SoundPrefab;
+		public AudioClip s7SoundPrefab;
+		public AudioClip s8SoundPrefab;
+		public AudioClip s9SoundPrefab;
+		
+		public int scenarioNum;
+		
+		
+		
+		
         static SteeringManager instance;
         // Use this for initialization
         GUIStyle style = new GUIStyle();
 
-        bool camFollowing = false;
+        public bool camFollowing = true;
         
         void Awake()
         {
@@ -34,24 +57,54 @@ namespace BGE
 
         void Start()
         {
+
+            Vector3[] points = new Vector3[3];
+            points[0] = new Vector3(1, 1, 1);
+            points[1] = new Vector3(1, 2, 0);
+            points[2] = new Vector3(-1, 2, 1);
+            Plane p = new Plane(points[0], points[1], points[2]);
+
             instance = this;
             Screen.showCursor = false;
 
             style.fontSize = 18;
             style.normal.textColor = Color.white;
 			
-			scenarios.Add(new AssignmentScenario());
-            scenarios.Add(new SeekScenario());
-            scenarios.Add(new ArriveScenario());
-            scenarios.Add(new PursueScenario());
-            scenarios.Add(new PathFollowingScenario());
-            scenarios.Add(new ObstacleAvoidanceScenario());
-            scenarios.Add(new FlockingScenario());
-            scenarios.Add(new StateMachineScenario());
-            scenarios.Add(new PathFindingScenario());
+			/*GameObject audio = new GameObject();
+			audio.AddComponent<AudioSource>();
+			audio.GetComponent<AudioSource>().maxDistance=2000;
+			audio.GetComponent<AudioSource>().clip = SteeringManager.Instance().BackgroundSoundPrefab;
+			audio.GetComponent<AudioSource>().playOnAwake =true;
+			audio.GetComponent<AudioSource>().volume =1;
+			audio.GetComponent<AudioSource>().loop = true;*/
+			//audio.transform.position = GameObject.FindGameObjectWithTag("MainCamera").transform.position;
 			
-            currentScenario = scenarios[0];
-            currentScenario.Start();
+			scenarioNum=0;
+			scenarios.Add(new OpeningCredits());
+			scenarios.Add(new scene1());
+			scenarios.Add(new scene2());
+			scenarios.Add(new scene3());
+			scenarios.Add(new scene4());
+			scenarios.Add(new scene5());
+			scenarios.Add(new scene6());
+			scenarios.Add(new scene7());
+			scenarios.Add(new scene8());
+			scenarios.Add(new scene9());
+			scenarios.Add(new scene10());
+			scenarios.Add(new ClosingCredits());
+			Invoke("nextScene",0);
+			Invoke("nextScene",5);
+			Invoke("nextScene",10);
+			Invoke("nextScene",15);
+			Invoke("nextScene",24);
+			Invoke("nextScene",37);
+			Invoke("nextScene",50);
+			Invoke("nextScene",55);
+			Invoke("nextScene",65);
+			Invoke("nextScene",75);
+			Invoke("nextScene",90);
+			Invoke("nextScene",105);
+			
 			
         }
 
@@ -67,15 +120,16 @@ namespace BGE
             if (Params.showMessages)
             {
                 GUI.Label(new Rect(0, 0, Screen.width, Screen.height), "" + message, style);
+				GUI.color = Color.blue;
             }
-            if (Event.current.type == EventType.Repaint)
+            /*if (Event.current.type == EventType.Repaint)
             {
                 message.Length = 0;
-            }
+            }*/
 
             if (Event.current.type == EventType.KeyDown)
             {
-                if (Event.current.keyCode == KeyCode.F1)
+                /*if (Event.current.keyCode == KeyCode.F1)
                 {
                     camFollowing = !camFollowing;
                 }
@@ -120,7 +174,7 @@ namespace BGE
                 {
                     GameObject camera = GameObject.FindGameObjectWithTag("MainCamera");
                     camera.transform.up = Vector3.up;
-                }
+                }*/
 
                 if (Event.current.keyCode == KeyCode.Escape)
                 {
@@ -131,23 +185,44 @@ namespace BGE
 
         public static void PrintMessage(string message)
         {
-            Instance().message.Append(message + "\n");
+            if (instance != null)
+            {
+                //Instance().message.Append(message + "\n");
+				
+            }
         }
 
         public static void PrintFloat(string message, float f)
         {
-            Instance().message.Append(message + ": " + f + "\n");
+            if (instance != null)
+            {
+               // Instance().message.Append(message + ": " + f + "\n");
+            }
         }
 
         public static void PrintVector(string message, Vector3 v)
         {
-            Instance().message.Append(message + ": (" + v.x + ", " + v.y + ", " + v.z + ")\n");
+            if (instance != null)
+            {
+                //Instance().message.Append(message + ": (" + v.x + ", " + v.y + ", " + v.z + ")\n");
+            }
         }
-
+		
+		public void nextScene()
+        {
+			
+			//currentScenario.DestroyObjectsWithTag("mothership");
+			//currentScenario.DestroyObjectsWithTag("leader");
+			currentScenario = scenarios[scenarioNum];
+			scenarioNum++;
+            currentScenario.Start();
+			
+            
+        }
         // Update is called once per frame
         void Update()
         {
-            PrintMessage("Press F1 to toggle cam following");
+          /*  PrintMessage("Press F1 to toggle cam following");
             PrintMessage("Press F2 to slow down");
             PrintMessage("Press F3 to speed up");
             PrintMessage("Press F4 to toggle messages");
@@ -155,12 +230,12 @@ namespace BGE
             PrintMessage("Press F6 to toggle debug drawing");
             PrintMessage("Press F7 to level camera");
             int fps = (int)(1.0f / Time.deltaTime);
-            PrintFloat("FPS: ", fps);
+            PrintFloat("FPS: ", fps);*/
             PrintMessage("Current scenario: " + currentScenario.Description());
-            for (int i = 0; i < scenarios.Count; i++)
+           /* for (int i = 0; i < scenarios.Count; i++)
             {
                 PrintMessage("Press " + i + " for " + scenarios[i].Description());
-            }
+            }*/
 
             if (camFollowing)
             {
@@ -168,8 +243,8 @@ namespace BGE
                 camera.transform.position = camFighter.transform.position;
                 camera.transform.rotation = camFighter.transform.rotation;
             }
-      
-            currentScenario.Update();
+			
+      		
         }
     }
 }

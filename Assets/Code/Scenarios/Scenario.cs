@@ -14,6 +14,12 @@ namespace BGE.Scenarios
         public GameObject leaderPrefab = SteeringManager.Instance().leaderPrefab;
         public GameObject boidPrefab = SteeringManager.Instance().boidPrefab;
 		public GameObject mothershipPrefab = SteeringManager.Instance().mothershipPrefab;
+		public GameObject missilePrefab = SteeringManager.Instance().missilePrefab;
+		public GameObject alienJetTrailPrefab = SteeringManager.Instance().alienJetTrailPrefab;
+		public GameObject jetTrailPrefab = SteeringManager.Instance().jetTrailPrefab;
+		public GameObject missileTrailPrefab = SteeringManager.Instance().missileTrailPrefab;
+		public GameObject mothershipLazerPrefab = SteeringManager.Instance().mothershipLazerPrefab;
+		
 
         public abstract string Description();
         public abstract void Start();
@@ -68,7 +74,31 @@ namespace BGE.Scenarios
             boid.tag = "boid";
             boid.AddComponent<SteeringBehaviours>();
             boid.transform.position = position;
+			
+            return boid;
+        }
+		
+		public GameObject CreateWithTag(Vector3 position, GameObject prefab, String x)
+        {
+            GameObject boid;
 
+            boid = (GameObject)GameObject.Instantiate(prefab);
+            boid.tag = x;
+            boid.AddComponent<SteeringBehaviours>();
+            boid.transform.position = position;
+			
+            return boid;
+        }
+		
+		public GameObject InstantiateBoid(Vector3 position, GameObject prefab, UnityEngine.Quaternion rotation )
+        {
+            GameObject boid;
+
+            boid = (GameObject)GameObject.Instantiate(prefab);
+            boid.tag = "boid";
+            boid.AddComponent<SteeringBehaviours>();
+            boid.transform.position = position;
+			boid.transform.rotation = rotation;
             return boid;
         }
 
@@ -80,11 +110,33 @@ namespace BGE.Scenarios
             camFollower.GetComponent<SteeringBehaviours>().leader = leader;
             camFollower.GetComponent<SteeringBehaviours>().offset = offset;
             camFollower.transform.position = leader.transform.TransformPoint(offset);
-            camFollower.GetComponent<SteeringBehaviours>().turnOn(SteeringBehaviours.behaviour_type.offset_pursuit);
-            //camFighter.GetComponent<SteeringBehaviours>().turnOn(SteeringBehaviours.behaviour_type.wall_avoidance);
-            camFollower.GetComponent<SteeringBehaviours>().turnOn(SteeringBehaviours.behaviour_type.obstacle_avoidance);
+			
+            camFollower.GetComponent<SteeringBehaviours>().OffsetPursuitEnabled = true;
+            //camFighter.GetComponent<SteeringBehaviours>().PlaneAvoidanceEnabled = true;
+            camFollower.GetComponent<SteeringBehaviours>().ObstacleAvoidanceEnabled = true;
             SteeringManager.Instance().camFighter = camFollower;
             GameObject.FindGameObjectWithTag("MainCamera").transform.position = camFollower.transform.position;
+
+            return camFollower;
+        }
+		
+		public GameObject CreateCamFollower2(GameObject leader, Vector3 offset, Vector3 rotate)
+        {
+			
+            GameObject camFollower = new GameObject();
+            //camFollower.tag = "camFollower";
+            camFollower.AddComponent<SteeringBehaviours>();
+            camFollower.GetComponent<SteeringBehaviours>().leader = leader;
+            camFollower.GetComponent<SteeringBehaviours>().offset = offset;
+            camFollower.transform.position = leader.transform.TransformPoint(offset);
+			
+            camFollower.GetComponent<SteeringBehaviours>().OffsetPursuitEnabled = true;
+            //camFighter.GetComponent<SteeringBehaviours>().PlaneAvoidanceEnabled = true;
+            camFollower.GetComponent<SteeringBehaviours>().ObstacleAvoidanceEnabled = true;
+			camFollower.transform.rotation=Quaternion.Euler(rotate);
+            SteeringManager.Instance().camFighter = camFollower;
+            GameObject.FindGameObjectWithTag("MainCamera").transform.position = camFollower.transform.position;
+			
 
             return camFollower;
         }
@@ -94,6 +146,10 @@ namespace BGE.Scenarios
             DestroyObjectsWithTag("boid");
             DestroyObjectsWithTag("obstacle");
             DestroyObjectsWithTag("camFollower");
+			DestroyObjectsWithTag("Player");
+			DestroyObjectsWithTag("enemy");
+			DestroyObjectsWithTag("missile");
+			//DestroyObjectsWithTag("missile");
         }
 
         public void GroundEnabled(bool enabled)

@@ -39,7 +39,7 @@ namespace BGE.Scenarios
             path.Looped = false;
             path.draw = true;
             leader.GetComponent<SteeringBehaviours>().path = path;
-            leader.GetComponent<SteeringBehaviours>().turnOn(SteeringBehaviours.behaviour_type.follow_path);
+            leader.GetComponent<SteeringBehaviours>().FollowPathEnabled = true;
 
             CreateCamFollower(leader, new Vector3(0, 5, -10));
 
@@ -70,12 +70,12 @@ namespace BGE.Scenarios
             if (Input.GetMouseButton(0))
             {
                 Plane worldPlane = new Plane(new Vector3(0, 1, 0), 0);
-               /* Ray ray = new Ray(camera.transform.position, camera.transform.forward);
+                UnityEngine.Ray ray = new UnityEngine.Ray(camera.transform.position, camera.transform.forward);
                 float distance = 0;
                 if (worldPlane.Raycast(ray, out distance))
                 {
                     targetPos = camera.transform.position + (camera.transform.forward * distance);
-                }*/
+                }
                 recalculate = true;
             }
 
@@ -88,7 +88,7 @@ namespace BGE.Scenarios
                 }
                 else
                 {
-                    leader.GetComponent<SteeringBehaviours>().turnOn(SteeringBehaviours.behaviour_type.follow_path);
+                    leader.GetComponent<SteeringBehaviours>().FollowPathEnabled = true;
                 }
                 leader.GetComponent<SteeringBehaviours>().path = path;
                 leader.GetComponent<SteeringBehaviours>().path.draw = true;

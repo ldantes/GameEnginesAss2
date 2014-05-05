@@ -12,7 +12,7 @@ namespace BGE
         public Vector3 velocity;
         public Vector3 acceleration;
 
-        public float myRadius;
+        public float defaultRadius = 5.0f;
 
         public float mass;
 
@@ -25,10 +25,12 @@ namespace BGE
         // Values required to implement certain behaviours
         public GameObject target; // required for evade
         public GameObject leader; // required for offset pursuit
+		public String  attackTag;
+		public String  flock = "boid";
         private Vector3 wanderTargetPos;
         public Vector3 seekTargetPos;
         public Vector3 offset;
-        private Vector3 randomWalkTarget;
+        private Vector3 randomWalkTarget = new Vector3(-100,400,0);
         public Path path = new Path();
         public float maxSpeed;
 
@@ -37,74 +39,48 @@ namespace BGE
         float timeDelta;
 
         #region Flags
-        public enum behaviour_type
-        {
-
-            none = 0x00000,
-            seek = 0x00002,
-            flee = 0x00004,
-            arrive = 0x00008,
-            wander = 0x00010,
-            cohesion = 0x00020,
-            separation = 0x00040,
-            alignment = 0x00080,
-            obstacle_avoidance = 0x00100,
-            wall_avoidance = 0x00200,
-            follow_path = 0x00400,
-            pursuit = 0x00800,
-            evade = 0x01000,
-            interpose = 0x02000,
-            hide = 0x04000,
-            flock = 0x08000,
-            offset_pursuit = 0x10000,
-            sphere_constrain = 0x20000,
-            random_walk = 0x40000,
-        };
-
-        int flags;
-
-        public bool isOn(behaviour_type behaviour)
-        {
-            return ((flags & (int)behaviour) == (int)behaviour);
-        }
-
-        public void turnOn(behaviour_type behaviour)
-        {
-            flags |= ((int)behaviour);
-        }
-        
-        public void turnOff(behaviour_type behaviour)
-        {
-            flags &= ( ~ (int)behaviour);
-        }
 
         public void turnOffAll()
         {
-            flags = (int)SteeringBehaviours.behaviour_type.none;
+            SeekEnabled= false;
+            FleeEnabled= false;
+            ArriveEnabled= false;
+            WanderEnabled= false;
+            CohesionEnabled= false;
+            SeparationEnabled= false;
+            AlignmentEnabled= false;
+            ObstacleAvoidanceEnabled= false;
+            PlaneAvoidanceEnabled= false;
+            FollowPathEnabled= false;
+            PursuitEnabled= false;
+            EvadeEnabled= false;
+            InterposeEnabled= false;
+            HideEnabled= false;
+            OffsetPursuitEnabled= false;
+            SphereConstrainEnabled= false;
+            RandomWalkEnabled= false;
         }
 
-        public bool SeekBehaviour
-        {
-            get
-            {
-                return isOn(behaviour_type.seek);
-            }
-            set
-            {
-                if (value)
-                {
-                    turnOn(behaviour_type.seek);
-                }
-                else
-                {
-                    turnOff(behaviour_type.seek);
-                }
-            }
-        }
-        #endregion
+        public bool SeekEnabled;
+        public bool FleeEnabled;
+        public bool ArriveEnabled;
+        public bool WanderEnabled;
+        public bool CohesionEnabled;
+        public bool SeparationEnabled;
+        public bool AlignmentEnabled;
+        public bool ObstacleAvoidanceEnabled;
+        public bool PlaneAvoidanceEnabled;
+        public bool FollowPathEnabled;
+        public bool PursuitEnabled;
+        public bool EvadeEnabled;
+        public bool InterposeEnabled;
+        public bool HideEnabled;
+        public bool OffsetPursuitEnabled;
+        public bool SphereConstrainEnabled;
+        public bool RandomWalkEnabled;
+#endregion
 
-        #region Utilities
-        
+#region Utilities        
         private void makeFeelers()
         {
             Feelers.Clear();
@@ -134,8 +110,8 @@ namespace BGE
             newFeeler = transform.TransformPoint(newFeeler);
             Feelers.Add(newFeeler);
         }
-        #endregion
-        #region Integration
+#endregion
+#region Integration
 
         private bool accumulateForce(ref Vector3 runningTotal, Vector3 force)
         {
@@ -176,7 +152,7 @@ namespace BGE
             Vector3 force = Vector3.zero;
             Vector3 steeringForce = Vector3.zero;
 
-            if (isOn(behaviour_type.obstacle_avoidance))
+            if (ObstacleAvoidanceEnabled)
             {
                 force = ObstacleAvoidance() * Params.GetWeight("obstacle_avoidance_weight");
 
@@ -188,16 +164,16 @@ namespace BGE
 
 
             Utilities.checkNaN(force);
-            if (isOn(behaviour_type.wall_avoidance))
+            if (PlaneAvoidanceEnabled)
             {
-                force = WallAvoidance() * Params.GetWeight("wall_avoidance_weight");
+                force = PlaneAvoidance() * Params.GetWeight("plane_avoidance_weight");
                 if (!accumulateForce(ref steeringForce, force))
                 {
                     return steeringForce;
                 }
             }
 
-            if (isOn(behaviour_type.sphere_constrain))
+            if (SphereConstrainEnabled)
             {
                 force = SphereConstrain(Params.GetFloat("world_range")) * Params.GetWeight("sphere_constrain_weight");
                 if (!accumulateForce(ref steeringForce, force))
@@ -206,7 +182,7 @@ namespace BGE
                 }
             }
 
-            if (isOn(behaviour_type.evade))
+            if (EvadeEnabled)
             {
                 force = Evade() * Params.GetWeight("evade_weight");
                 if (!accumulateForce(ref steeringForce, force))
@@ -215,13 +191,22 @@ namespace BGE
                 }
             }
 
+            if (FleeEnabled)
+            {
+                force = Flee(leader.transform.position) * Params.GetWeight("flee_weight");
+                if (!accumulateForce(ref steeringForce, force))
+                {
+                    return steeringForce;
+                }
+            }
+
             int tagged = 0;
-            if (isOn(behaviour_type.separation) || isOn(behaviour_type.cohesion) || isOn(behaviour_type.alignment))
+            if (SeparationEnabled || CohesionEnabled || AlignmentEnabled)
             {
                 tagged = TagNeighboursSimple(Params.GetFloat("tag_range"));
             }
 
-            if (isOn(behaviour_type.separation) && (tagged > 0))
+            if (SeparationEnabled && (tagged > 0))
             {
                 force = Separation() * Params.GetWeight("separation_weight");
                 if (!accumulateForce(ref steeringForce, force))
@@ -230,7 +215,7 @@ namespace BGE
                 }
             }
 
-            if (isOn(behaviour_type.alignment) && (tagged > 0))
+            if (AlignmentEnabled && (tagged > 0))
             {
                 force = Alignment() * Params.GetWeight("alignment_weight");
                 if (!accumulateForce(ref steeringForce, force))
@@ -239,7 +224,7 @@ namespace BGE
                 }
             }
 
-            if (isOn(behaviour_type.cohesion) && (tagged > 0))
+            if (CohesionEnabled && (tagged > 0))
             {
                 force = Cohesion() * Params.GetWeight("cohesion_weight");
                 if (!accumulateForce(ref steeringForce, force))
@@ -248,7 +233,7 @@ namespace BGE
                 }
             }
 
-            if (isOn(behaviour_type.seek))
+            if (SeekEnabled)
             {
                 force = Seek(seekTargetPos) * Params.GetWeight("seek_weight");
                 if (!accumulateForce(ref steeringForce, force))
@@ -257,7 +242,7 @@ namespace BGE
                 }
             }
 
-            if (isOn(behaviour_type.arrive))
+            if (ArriveEnabled)
             {
                 force = Arrive(seekTargetPos) * Params.GetWeight("arrive_weight");
                 if (!accumulateForce(ref steeringForce, force))
@@ -266,7 +251,7 @@ namespace BGE
                 }
             }
 
-            if (isOn(behaviour_type.wander))
+            if (WanderEnabled)
             {
                 force = Wander() * Params.GetWeight("wander_weight");
                 if (!accumulateForce(ref steeringForce, force))
@@ -275,7 +260,7 @@ namespace BGE
                 }
             }
 
-            if (isOn(behaviour_type.pursuit))
+            if (PursuitEnabled)
             {
                 force = Pursue() * Params.GetWeight("pursuit_weight");
                 if (!accumulateForce(ref steeringForce, force))
@@ -284,7 +269,7 @@ namespace BGE
                 }
             }
 
-            if (isOn(behaviour_type.offset_pursuit))
+            if (OffsetPursuitEnabled)
             {
                 force = OffsetPursuit(offset) * Params.GetWeight("offset_pursuit_weight");
                 if (!accumulateForce(ref steeringForce, force))
@@ -293,7 +278,7 @@ namespace BGE
                 }
             }
 
-            if (isOn(behaviour_type.follow_path))
+            if (FollowPathEnabled)
             {
                 force = FollowPath() * Params.GetWeight("follow_path_weight");
                 if (!accumulateForce(ref steeringForce, force))
@@ -302,7 +287,7 @@ namespace BGE
                 }
             }
 
-            if (isOn(behaviour_type.random_walk))
+            if (RandomWalkEnabled)
             {
                 force = RandomWalk() * Params.GetWeight("random_walk_weight");
                 if (!accumulateForce(ref steeringForce, force))
@@ -320,7 +305,6 @@ namespace BGE
             force = Calculate();
             Utilities.checkNaN(force);
             Vector3 newAcceleration = force / mass;
-
             if (Params.drawVectors)
             {
                 LineDrawer.DrawVectors(transform);
@@ -424,7 +408,8 @@ namespace BGE
             }
             // Matt Bucklands Obstacle avoidance
             // First tag obstacles in range
-            GameObject[] obstacles = GameObject.FindGameObjectsWithTag("obstacle");
+            GameObject[] obstacles = GameObject.FindGameObjectsWithTag("obstacle") ;
+			
             if (obstacles.Length == 0)
             {
                 return Vector3.zero;
@@ -457,7 +442,7 @@ namespace BGE
                     // is a potential intersection.
 
                     float obstacleRadius = o.transform.localScale.x / 2;
-                    float expandedRadius = myRadius + obstacleRadius;
+                    float expandedRadius = GetRadius() + obstacleRadius;
                     if ((Math.Abs(localPos.y) < expandedRadius) && (Math.Abs(localPos.x) < expandedRadius))
                     {
                         // Now to do a ray/sphere intersection test. The center of the				
@@ -470,10 +455,10 @@ namespace BGE
                         ray.look = Vector3.forward;
 
                         // Find the point of intersection
-                       // if (tempSphere.closestRayIntersects(ray, Vector3.zero, ref intersection) == false)
-                    //    {
-                    //        return Vector3.zero;
-                    //    }
+                        if (tempSphere.closestRayIntersects(ray, Vector3.zero, ref intersection) == false)
+                        {
+                            return Vector3.zero;
+                        }
 
                         // Now see if its the closest, there may be other intersecting spheres
                         float dist = intersection.magnitude;
@@ -493,7 +478,7 @@ namespace BGE
 
                     //calculate the lateral force
                     float obstacleRadius = closestIntersectingObstacle.GetComponent<Renderer>().bounds.extents.magnitude;
-                    float expandedRadius = myRadius + obstacleRadius;
+                    float expandedRadius = GetRadius() + obstacleRadius;
                     force.x = (expandedRadius - Math.Abs(localPosOfClosestObstacle.x)) * multiplier;
                     force.y = (expandedRadius - -Math.Abs(localPosOfClosestObstacle.y)) * multiplier;
 
@@ -598,13 +583,12 @@ namespace BGE
             return (worldTarget - transform.position);
         }
 
-        public Vector3 WallAvoidance()
+        public Vector3 PlaneAvoidance()
         {
             makeFeelers();
 
-            Plane worldPlane = new Plane(new Vector3(0, 1, 0), 0);
+            Plane worldPlane = new Plane(new Vector3(0, 1, 0), 0);           
             Vector3 force = Vector3.zero;
-
             foreach (Vector3 feeler in Feelers)
             {
                 if (!worldPlane.GetSide(feeler))
@@ -693,7 +677,7 @@ namespace BGE
         {
             tagged.Clear();
 
-            GameObject[] steerables = GameObject.FindGameObjectsWithTag("boid");
+            GameObject[] steerables = GameObject.FindGameObjectsWithTag(flock);
             foreach (GameObject steerable in steerables)
             {
                 if (steerable != gameObject)
@@ -716,7 +700,7 @@ namespace BGE
                 if (entity != null)
                 {
                     Vector3 toEntity = transform.position - entity.transform.position;
-                    steeringForce += (Vector3.Normalize(toEntity) / toEntity.magnitude);
+                    steeringForce += (Vector3.Normalize(toEntity) / toEntity.magnitude)*20;
                 }
             }
 
@@ -779,7 +763,20 @@ namespace BGE
         // Use this for initialization
         void Start()
         {
-            myRadius = 5.0f;
+            maxSpeed = Params.GetFloat("max_speed");            
+        }
+
+        private float GetRadius()
+        {
+            Renderer r = GetComponent<Renderer>();
+            if (r == null)
+            {
+                return defaultRadius;
+            }
+            else
+            {
+                return r.bounds.extents.magnitude;
+            }
         }
 
         public SteeringBehaviours()
@@ -787,8 +784,7 @@ namespace BGE
             force = Vector3.zero;
             velocity = Vector3.zero;
             mass = 1.0f;
-            flags = 0;
-            maxSpeed = Params.GetFloat("max_speed");
+            turnOffAll();
             calculationMethod = CalculationMethods.WeightedTruncatedRunningSumWithPrioritisation;
             target = null;
             leader = null;

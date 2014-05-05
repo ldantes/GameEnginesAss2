@@ -1,16 +1,6 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Code\Scenarios\AssignmentScenario.cs">
-    <Files>
-      <File FileName="Assets\Code\Scenarios\PathFindingScenario.cs" Line="13" Column="9" />
-      <File FileName="Assets\Code\SteeringBehaviours.cs" Line="26" Column="33" />
-      <File FileName="Assets\Code\Scenarios\SeekScenario.cs" Line="21" Column="33" />
-      <File FileName="Assets\Code\Scenarios\FlockingScenario.cs" Line="32" Column="50" />
-      <File FileName="Assets\Code\Scenarios\Scenario.cs" Line="16" Column="45" />
-      <File FileName="Assets\Code\SteeringManager.cs" Line="22" Column="38" />
-      <File FileName="Assets\Code\Scenarios\AssignmentScenario.cs" Line="26" Column="4" />
-    </Files>
-  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workbench />
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>

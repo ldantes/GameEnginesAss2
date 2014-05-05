@@ -404,7 +404,7 @@ namespace BGE
                 ray.look.Normalize();
                 ray.pos = point0;
                 Vector3 intersectionPoint = new Vector3();
-                /*if (sphere.closestRayIntersects(ray, point0, ref intersectionPoint))
+                if (sphere.closestRayIntersects(ray, point0, ref intersectionPoint))
                 {
                     float dist = (intersectionPoint - point0).magnitude;
                     float rayLength = (point1 - point0).magnitude;
@@ -412,7 +412,7 @@ namespace BGE
                     {
                         return true;
                     }
-                }*/
+                }
             }
             return false;
         }
